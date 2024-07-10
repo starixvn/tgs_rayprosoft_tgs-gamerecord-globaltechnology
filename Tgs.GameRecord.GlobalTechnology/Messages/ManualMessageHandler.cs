@@ -5,7 +5,7 @@ using Tgs.GameRecord.GlobalTechnology.Core;
 using Tgs.GameRecord.GlobalTechnology.Core.ApplicationServices;
 using Valhalla.MessageQueue;
 
-namespace Tgs.GameRecord.SharpSports.Messages;
+namespace Tgs.GameRecord.GlobalTechnology.Messages;
 
 public class ManualMessageHandler(
 	ILogger<ManualMessageHandler> logger,
