@@ -87,14 +87,14 @@ internal class JobInitCommandService(
 					var configurationDataJson = JsonNode.Parse(gameProviderConfig.ConfigurationData)
 						?? throw new Exception($"Game Provider Configuration does not exist.({gameProviderConfig.GameProviderConfigId})");
 
-					var apiUrl = new Uri(configurationDataJson["DataApiUrl "]?.ToString()
-						?? settingConfigurationJson["DataApiUrl "]?.ToString()
-						?? throw new Exception($"Required parameters(DataApiUrl )"));
+					var apiUrl = new Uri(configurationDataJson["DataApiUrl"]?.ToString()
+						?? settingConfigurationJson["DataApiUrl"]?.ToString()
+						?? throw new Exception($"Required parameters(DataApiUrl)"));
 					var brandId = configurationDataJson["BrandId"]?.GetValue<int>()
 						?? settingConfigurationJson["BrandId"]?.GetValue<int>()
 						?? throw new Exception($"Required parameters(BrandId)");
-					var secretKey = configurationDataJson["SecretKey "]?.ToString()
-						?? settingConfigurationJson["SecretKey "]?.ToString()
+					var secretKey = configurationDataJson["SecretKey"]?.ToString()
+						?? settingConfigurationJson["SecretKey"]?.ToString()
 						?? throw new Exception($"Required parameters(SecretKey )");
 
 					if (gameProviderAgentMapper.ContainsKey(brandId))
