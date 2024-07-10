@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "game-gamerecord-gt.fullname" . }}
+  labels:
+    {{- include "game-gamerecord-gt.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "game-gamerecord-gt.selectorLabels" . | nindent 4 }}
