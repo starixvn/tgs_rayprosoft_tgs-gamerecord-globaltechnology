@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using Tgs.GameRecord.GlobalTechnology;
 
-namespace Tgs.GameRecord.SharpSports;
+namespace Tgs.GameRecord.GlobalTechnology;
 
 internal class RedisConnectionManager : IDisposable
 {

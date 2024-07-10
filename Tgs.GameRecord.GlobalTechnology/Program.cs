@@ -7,12 +7,11 @@ using NATS.Client.Core;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Tgs.GameRecord.GlobalTechnology;
 using Tgs.GameRecord.GlobalTechnology.Common;
 using Tgs.GameRecord.GlobalTechnology.Core;
-using Tgs.GameRecord.SharpSports;
-using Tgs.GameRecord.SharpSports.Messages;
+using Tgs.GameRecord.GlobalTechnology.Messages;
 using Tgs.MessageQueue.Nats.Serializers;
-
 internal class Program
 {
 	private static void Main(string[] args)

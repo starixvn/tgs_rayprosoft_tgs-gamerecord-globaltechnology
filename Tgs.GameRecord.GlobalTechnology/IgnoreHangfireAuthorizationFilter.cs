@@ -1,6 +1,6 @@
 ﻿using Hangfire.Dashboard;
 
-namespace Tgs.GameRecord.SharpSports;
+namespace Tgs.GameRecord.GlobalTechnology;
 
 public class IgnoreHangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {

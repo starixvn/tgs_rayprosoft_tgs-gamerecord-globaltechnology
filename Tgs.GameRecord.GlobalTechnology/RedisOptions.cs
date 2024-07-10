@@ -1,4 +1,4 @@
-﻿namespace Tgs.GameRecord.SharpSports;
+﻿namespace Tgs.GameRecord.GlobalTechnology;
 
 public record RedisOptions
 {

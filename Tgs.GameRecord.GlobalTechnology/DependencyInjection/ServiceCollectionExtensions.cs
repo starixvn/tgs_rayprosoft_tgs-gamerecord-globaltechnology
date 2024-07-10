@@ -1,7 +1,7 @@
 ﻿using Tgs.GameCommand.Client;
 using Tgs.GameInterface.GlobalTechnology.Client;
 using Tgs.GameRecord.GlobalTechnology.Core;
-using Tgs.GameRecord.SharpSports;
+using Tgs.GameRecord.GlobalTechnology;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

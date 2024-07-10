@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Tgs.GameRecord.GlobalTechnology.Common;
 using Valhalla.MessageQueue;
 
-namespace Tgs.GameRecord.SharpSports.Controllers;
+namespace Tgs.GameRecord.GlobalTechnology.Controllers;
 
 [Route("api/gt")]
 [ApiController]
