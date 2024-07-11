@@ -57,6 +57,7 @@ internal class PullRecordCommandService(
 						}));
 				}
 			}
+
 			page++;
 		} while (await gameRecords.AnyAsync(
 			cancellationToken: cancellationToken)

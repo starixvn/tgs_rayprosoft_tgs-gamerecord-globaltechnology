@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tgs.GameRecord.GlobalTechnology", "Tgs.GameRecord.GlobalTechnology\Tgs.GameRecord.GlobalTechnology.csproj", "{A899D07D-6273-481E-8841-DA307360D6D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tgs.GameRecord.GlobalTechnology", "Tgs.GameRecord.GlobalTechnology\Tgs.GameRecord.GlobalTechnology.csproj", "{A899D07D-6273-481E-8841-DA307360D6D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tgs.GameRecord.GlobalTechnology.Core", "Tgs.GameRecord.GlobalTechnology.Core\Tgs.GameRecord.GlobalTechnology.Core.csproj", "{6A7B57CC-F140-4F47-B67A-CBC83AF861CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tgs.GameRecord.GlobalTechnology.Core", "Tgs.GameRecord.GlobalTechnology.Core\Tgs.GameRecord.GlobalTechnology.Core.csproj", "{6A7B57CC-F140-4F47-B67A-CBC83AF861CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tgs.GameRecord.GlobalTechnology.Common", "Tgs.GameRecord.GlobalTechnology.Common\Tgs.GameRecord.GlobalTechnology.Common.csproj", "{B037E8F2-14C6-4BFB-8994-FBA9DDE1E502}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tgs.GameRecord.GlobalTechnology.Common", "Tgs.GameRecord.GlobalTechnology.Common\Tgs.GameRecord.GlobalTechnology.Common.csproj", "{B037E8F2-14C6-4BFB-8994-FBA9DDE1E502}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tgs.GameRecord.GlobalTechnology.Repositories", "Tgs.GameRecord.GlobalTechnology.Repositories\Tgs.GameRecord.GlobalTechnology.Repositories.csproj", "{45EF2F46-84AE-478B-97A1-70D211AE8482}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tgs.GameRecord.GlobalTechnology.Repositories", "Tgs.GameRecord.GlobalTechnology.Repositories\Tgs.GameRecord.GlobalTechnology.Repositories.csproj", "{45EF2F46-84AE-478B-97A1-70D211AE8482}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tgs.GameRecord.GlobalTechnology.Core.UnitTest", "Tgs.GameRecord.GlobalTechnology.Core.UnitTest\Tgs.GameRecord.GlobalTechnology.Core.UnitTest.csproj", "{6A467833-4336-410E-ABF1-63CDBEE78C97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{45EF2F46-84AE-478B-97A1-70D211AE8482}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45EF2F46-84AE-478B-97A1-70D211AE8482}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45EF2F46-84AE-478B-97A1-70D211AE8482}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A467833-4336-410E-ABF1-63CDBEE78C97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A467833-4336-410E-ABF1-63CDBEE78C97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A467833-4336-410E-ABF1-63CDBEE78C97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A467833-4336-410E-ABF1-63CDBEE78C97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
