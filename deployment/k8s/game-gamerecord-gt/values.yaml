@@ -77,7 +77,7 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
-  monitorResources:
+monitorResources:
   requests:
     cpu: 50m
     memory: 32Mi
