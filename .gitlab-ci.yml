@@ -23,7 +23,7 @@ build-code:
 unit-test:
   extends: .unit-test-template
   script:
-    - dotnet test "**/bin/$BuildConfiguration/$Framework/*Test.dll" -l:'junit;LogFilePath=TestResults/TestResults.xml'
+    - dotnet test -c $BuildConfiguration -l:"junit;LogFilePath=../TestReports/{assembly}-TestReport.xml" --no-restore --no-build
 
 push-docker-image:
   extends: .push-docker-image-template
@@ -59,7 +59,7 @@ deploy-dev:
     - main
   when: manual
   script:
-    - deploy_k8s default $HelmTemplateFolderName $namespace
+    - deploy_k8s $TgsSettingKey $HelmTemplateFolderName $namespace
 
 deploy-staging:
   extends: .deploy-k8s-template
@@ -85,7 +85,7 @@ deploy-staging:
     - main
   when: manual
   script:
-    - deploy_k8s default $HelmTemplateFolderName $namespace
+    - deploy_k8s $TgsSettingKey $HelmTemplateFolderName $namespace
 
 deploy-prod:
   extends: .deploy-k8s-template
@@ -111,4 +111,4 @@ deploy-prod:
     - main
   when: manual
   script:
-    - deploy_k8s default $HelmTemplateFolderName $namespace
+    - deploy_k8s $TgsSettingKey $HelmTemplateFolderName $namespace
