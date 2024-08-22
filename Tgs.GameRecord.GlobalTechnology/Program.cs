@@ -12,158 +12,169 @@ using Tgs.GameRecord.GlobalTechnology.Common;
 using Tgs.GameRecord.GlobalTechnology.Core;
 using Tgs.GameRecord.GlobalTechnology.Messages;
 using Tgs.MessageQueue.Nats.Serializers;
-internal class Program
-{
-	private static void Main(string[] args)
+
+var filterInstrumentations = new[] { "html", "ico", "png", "jpg" };
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging
+	.AddOpenTelemetry(options =>
 	{
-		var filterInstrumentations = new[] { "html", "ico", "png", "jpg" };
-
-		var builder = WebApplication.CreateBuilder(args);
-
-		builder.Logging
-			.AddOpenTelemetry(options =>
-			{
-				options.IncludeFormattedMessage = true;
-				options.ParseStateValues = true;
-				_ = options.AddFluentdForwardExporter(fluentOptions =>
-				{
-					var nodeIp = builder.Configuration.GetValue<string>("NODE_IP")!;
-					fluentOptions.Host = nodeIp;
-					fluentOptions.Tag = builder.Configuration.GetValue<string>("OTEL_SERVICE_NAME")!;
-					fluentOptions.UseMessagePack();
-				});
-			});
-
-		// Add services to the container.
-		builder.Services
-			.AddRouting(options => options.LowercaseUrls = true)
-			.AddControllers(options =>
-			{
-				options.Filters.Add(new ProducesAttribute(MediaTypeNames.Application.Json));
-				options.Filters.Add(new ConsumesAttribute(MediaTypeNames.Application.Json));
-			})
-			.AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-		builder.Services.AddEndpointsApiExplorer();
-		builder.Services.AddSwaggerGen(c =>
+		options.IncludeFormattedMessage = true;
+		options.ParseStateValues = true;
+		_ = options.AddFluentdForwardExporter(fluentOptions =>
 		{
-			var xmlFileNames = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.xml");
-			foreach (var xmlFileName in xmlFileNames)
-				c.IncludeXmlComments(xmlFileName);
+			var nodeIp = builder.Configuration.GetValue<string>("NODE_IP")!;
+			fluentOptions.Host = nodeIp;
+			fluentOptions.Tag = builder.Configuration.GetValue<string>("OTEL_SERVICE_NAME")!;
+			fluentOptions.UseMessagePack();
 		});
+	});
 
-		var _gameRecordInfo = builder.Configuration.GetSection("GameRecordInfo").Get<GameRecordInfoOptions>()!;
+// Add services to the container.
+builder.Services
+	.AddRouting(options => options.LowercaseUrls = true)
+	.AddControllers(options =>
+	{
+		options.Filters.Add(new ProducesAttribute(MediaTypeNames.Application.Json));
+		options.Filters.Add(new ConsumesAttribute(MediaTypeNames.Application.Json));
+	})
+	.AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-		// Learn more about configuring Hangfire
-		builder.Services.AddHangfire(
-			(sp, config) =>
-			{
-				var systemConfig = sp.GetRequiredService<IConfiguration>();
-				var connectionString = builder.Configuration.GetConnectionString("redis")!;
-				var gameRecordInfoOptions = builder.Configuration.GetSection("GameRecordInfo").Get<GameRecordInfoOptions>()!;
-				var options = new RedisStorageOptions
-				{
-					Prefix = gameRecordInfoOptions.HangfirePrefix
-				};
-				_ = config
-				.UseRedisStorage(connectionString, options)
-				.WithJobExpirationTimeout(TimeSpan.FromMinutes(30));
-			})
-			.AddHangfireServer();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-		builder.Services.AddGameRecord(
-			(options, sp) =>
-			{
-				var configuration = sp.GetRequiredService<IConfiguration>();
-				options.ConnectionString = configuration.GetConnectionString("Redis")!;
-			},
-			(options, sp) =>
-			{
-				var configuration = sp.GetRequiredService<IConfiguration>();
-				configuration.GetSection("GameRecordInfo").Bind(options);
-			},
-			(options, sp) =>
-			{
-				var configuration = sp.GetRequiredService<IConfiguration>();
-				options.BaseUrl = configuration.GetValue<Uri>("GameRecord:GameCommandClientBaseUrl")!;
-			},
-			(options, sp) =>
-			{
-				var configuration = sp.GetRequiredService<IConfiguration>();
-				options.BaseUrl = configuration.GetValue<Uri>("GameRecord:GameInterfaceClientBaseUrl")!;
-			});
+var _gameRecordInfo = builder.Configuration.GetSection("GameRecordInfo").Get<GameRecordInfoOptions>()!;
 
-		builder.Services
-			.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
-			{
-				Url = builder.Configuration.GetConnectionString("Nats")!,
-				SerializerRegistry = TgsNatsSerializerRegistration.Default
-			}))
-			.AddMessageQueue()
-			.AddNatsMessageQueue(config => config
-				.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats"))
-				.AddHandler<ScheduleMessageHandler>(GlobalTechnologyNatsConst.SchedulePublish, GlobalTechnologyNatsConst.SchedulePublish)
-				.AddHandler<ManualMessageHandler>(GlobalTechnologyNatsConst.ManualPublish, GlobalTechnologyNatsConst.ManualPublish))
-			.ClearAllExchanges()
-			.AddNatsGlobPatternExchange("*");
+// Learn more about configuring Hangfire
+builder.Services.AddHangfire(
+	(sp, config) =>
+	{
+		var systemConfig = sp.GetRequiredService<IConfiguration>();
+		var connectionString = builder.Configuration.GetConnectionString("redis")!;
+		var gameRecordInfoOptions = builder.Configuration.GetSection("GameRecordInfo").Get<GameRecordInfoOptions>()!;
+		var options = new RedisStorageOptions
+		{
+			Prefix = gameRecordInfoOptions.HangfirePrefix
+		};
+		_ = config
+			.UseRedisStorage(connectionString, options)
+			.WithJobExpirationTimeout(TimeSpan.FromMinutes(30));
+	})
+	.AddHangfireServer();
 
-		builder.Services
-			.AddOpenTelemetry()
-			.WithTracing(builder => builder
-				.SetResourceBuilder(ResourceBuilder.CreateDefault()
-					.AddEnvironmentVariableDetector())
-				.AddSource("Tgs.*")
-				.AddSource("TGS.*")
-				.AddSource("Valhalla.*")
-				.AddAspNetCoreInstrumentation(options => options.Filter =
-					httpContext => !httpContext.Request.Path.HasValue
-					|| !httpContext.Request.Path.StartsWithSegments("/swagger")
-					&& !httpContext.Request.Path.StartsWithSegments("/healthz")
-					&& !httpContext.Request.Path.StartsWithSegments("/profiler/")
-					&& !httpContext.Request.Path.StartsWithSegments("/hangfire")
-					&& !httpContext.Request.Path.StartsWithSegments("/metrics")
-					&& !filterInstrumentations.Any(ext => httpContext.Request.Path.Value.EndsWith($".{ext}")))
-				.AddHttpClientInstrumentation()
-				.AddGrpcClientInstrumentation()
-				.AddGrpcCoreInstrumentation()
-				.AddEntityFrameworkCoreInstrumentation(options => options.SetDbStatementForText = true)
-				.AddOtlpExporter())
-			.WithMetrics(meterBuiler => meterBuiler
-			.SetResourceBuilder(ResourceBuilder.CreateDefault()
-				.AddEnvironmentVariableDetector())
-				.AddRuntimeInstrumentation()
-				.AddAspNetCoreInstrumentation()
-				.AddOtlpExporter())
-			.Services
-			.AddInterceptionService()
-			.AddServiceUtiltiyInterceptors();
+builder.Services
+	.AddOptions<RedisOptions>()
+	.Configure((RedisOptions options, IServiceProvider sp) =>
+	{
+		var configuration = sp.GetRequiredService<IConfiguration>();
+		options.ConnectionString = configuration.GetConnectionString("Redis")!;
+	})
+	.Services
+	.AddOptions<GameRecordInfoOptions>()
+	.Configure((GameRecordInfoOptions options, IServiceProvider sp) =>
+	{
+		var configuration = sp.GetRequiredService<IConfiguration>();
+		configuration.GetSection("GameRecordInfo").Bind(options);
+	})
+	.Services
+	.AddOptions<PolicySettingsOptions>()
+	.Configure((PolicySettingsOptions options, IServiceProvider sp) =>
+	{
+		var configuration = sp.GetRequiredService<IConfiguration>();
+		configuration.GetSection("PolicySettings").Bind(options);
+	})
+	.Services
+	.AddSingleton<RedisConnectionManager>()
+	.AddGameCommandClient((options, sp) =>
+	{
+		var configuration = sp.GetRequiredService<IConfiguration>();
+		options.BaseUrl = configuration.GetValue<Uri>("GameRecord:GameCommandClientBaseUrl")!;
+	})
+	.AddGameInterfaceGlobalTechnologyClient((options, sp) =>
+	{
+		var configuration = sp.GetRequiredService<IConfiguration>();
+		options.BaseUrl = configuration.GetValue<Uri>("GameRecord:GameInterfaceClientBaseUrl")!;
+	})
+	.AddGameRecordHandleClient(httpClientBuilder => httpClientBuilder.ConfigureHttpClient((sp, http) =>
+	{
+		var config = sp.GetRequiredService<IConfiguration>();
+		http.BaseAddress = config.GetValue<Uri>("GameRecord:GameRecordHandleClientBaseUrl");
+	}))
+	.AddGameRecordCore()
+	.AddGameRecordRepository(
+		redisDatabaseResolver: (sp) => sp.GetRequiredService<RedisConnectionManager>().Database);
 
-		builder.Services.AddHealthChecks();
+builder.Services
+	.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
+	{
+		Url = builder.Configuration.GetConnectionString("Nats")!,
+		SerializerRegistry = TgsNatsSerializerRegistration.Default
+	}))
+	.AddMessageQueue()
+	.AddNatsMessageQueue(config => config
+		.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats"))
+		.AddHandler<ScheduleMessageHandler>(GlobalTechnologyNatsConst.SchedulePublish, GlobalTechnologyNatsConst.SchedulePublish)
+		.AddHandler<ManualMessageHandler>(GlobalTechnologyNatsConst.ManualPublish, GlobalTechnologyNatsConst.ManualPublish))
+	.ClearAllExchanges()
+	.AddNatsGlobPatternExchange(GlobalTechnologyNatsConst.SchedulePublish)
+	.AddNatsGlobPatternExchange(GlobalTechnologyNatsConst.ManualPublish);
 
-		var app = builder.Build();
+builder.Services
+	.AddOpenTelemetry()
+	.WithTracing(builder => builder
+		.SetResourceBuilder(ResourceBuilder.CreateDefault()
+			.AddEnvironmentVariableDetector())
+		.AddSource("Tgs.*")
+		.AddSource("TGS.*")
+		.AddSource("Valhalla.*")
+		.AddAspNetCoreInstrumentation(options => options.Filter =
+			httpContext => !httpContext.Request.Path.HasValue
+			|| !httpContext.Request.Path.StartsWithSegments("/swagger")
+			&& !httpContext.Request.Path.StartsWithSegments("/healthz")
+			&& !httpContext.Request.Path.StartsWithSegments("/profiler/")
+			&& !httpContext.Request.Path.StartsWithSegments("/hangfire")
+			&& !httpContext.Request.Path.StartsWithSegments("/metrics")
+			&& !filterInstrumentations.Any(ext => httpContext.Request.Path.Value.EndsWith($".{ext}")))
+		.AddHttpClientInstrumentation()
+		.AddGrpcClientInstrumentation()
+		.AddGrpcCoreInstrumentation()
+		.AddEntityFrameworkCoreInstrumentation(options => options.SetDbStatementForText = true)
+		.AddOtlpExporter())
+	.WithMetrics(meterBuiler => meterBuiler
+	.SetResourceBuilder(ResourceBuilder.CreateDefault()
+		.AddEnvironmentVariableDetector())
+		.AddRuntimeInstrumentation()
+		.AddAspNetCoreInstrumentation()
+		.AddOtlpExporter())
+	.Services
+	.AddInterceptionService()
+	.AddServiceUtiltiyInterceptors();
 
-		_ = app.UseSwagger();
-		_ = app.UseSwaggerUI();
+builder.Services.AddHealthChecks();
 
-		app.UseHangfireDashboard(
-			"/hangfire",
-			new DashboardOptions()
-			{
-				Authorization =
-				[
-					new IgnoreHangfireAuthorizationFilter()
-				]
-			});
+var app = builder.Build();
 
-		_ = app.UseAuthorization();
+_ = app.UseSwagger();
+_ = app.UseSwaggerUI();
 
-		_ = app.MapControllers();
+app.UseHangfireDashboard(
+	"/hangfire",
+	new DashboardOptions()
+	{
+		Authorization =
+		[
+			new IgnoreHangfireAuthorizationFilter()
+		]
+	});
 
-		app.MapHealthChecks("/healthz");
+_ = app.UseAuthorization();
 
-		_ = app.UseHangfireRegisterAsync();
+_ = app.MapControllers();
 
-		app.Run();
-	}
-}
+app.MapHealthChecks("/healthz");
+
+_ = app.UseHangfireRegisterAsync();
+
+app.Run();

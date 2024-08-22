@@ -1,19 +1,26 @@
 ﻿using System.Text.Json.Nodes;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Tgs.GameInterface.GlobalTechnology.Protos;
 using Tgs.GameRecord.GlobalTechnology.Core.ApplicationServices;
-using Valhalla.MessageQueue;
+using Tgs.GameRecord.Handle.Client;
 
 namespace Tgs.GameRecord.GlobalTechnology.Core.UnitTest.ApplicationServices;
+
 public class HandleRecordCommandServiceTest
 {
 	[Fact]
 	public async Task Normal_Process()
 	{
 		var faceLogger = NullLogger<HandleRecordCommandService>.Instance;
-		var fakeMessageSender = Substitute.For<IMessageSender>();
+		var fakePolicySettingsOptions = Options.Create(new PolicySettingsOptions
+		{
+			RetryCount = 1,
+			RetrySeconds = 1,
+		});
+		var fakeGameRecordHandleClient = Substitute.For<IGameRecordHandleClient>();
 
 		var gameRecordInfo = new GameRecordInfo
 		{
@@ -70,25 +77,25 @@ public class HandleRecordCommandServiceTest
 
 		var service = new HandleRecordCommandService(
 			faceLogger,
-			fakeMessageSender);
+			fakePolicySettingsOptions,
+			fakeGameRecordHandleClient);
 
 		await service.ExecuteAsync(command);
 
-		_ = fakeMessageSender
+		_ = fakeGameRecordHandleClient
 			.Received(1)
-			.PublishAsync(
-			subject: Arg.Is(Handle.Common.GameRecordHandleNatsConst.GameRecordHandleRequest),
-			data: Arg.Is(new Handle.Common.Protos.GameRecordHandleRequest
+			.HandleAsync(
+			source: Arg.Is(new Handle.Common.ViewModels.GameRecordHandleViewModel
 			{
 				GameProviderCode = command.GameProviderCode,
 				PlayerCode = command.Info.PlayerCode,
 				ExternalRoundId = command.Info.ExternalBetId,
 				ExternalBetId = command.Info.ExternalBetId,
 				ExternalGameId = command.Info.ExternalGameId,
-				ExternalCreatedOn = command.Info.ExternalCreatedOn,
-				ExternalClosedOn = command.Info.ExternalClosedOn,
-				ExternalPayoffOn = command.Info.ExternalClosedOn,
-				ExternalResettleOn = DateTimeOffset.UnixEpoch.ToTimestamp(),
+				ExternalCreatedOn = command.Info.ExternalCreatedOn.ToDateTimeOffset(),
+				ExternalClosedOn = command.Info.ExternalClosedOn.ToDateTimeOffset(),
+				ExternalPayoffOn = command.Info.ExternalClosedOn.ToDateTimeOffset(),
+				ExternalResettleOn = DateTimeOffset.UnixEpoch,
 				BetState = Handle.Common.Protos.BetState.Win,
 				BetType = Handle.Common.Protos.BetType.Normal,
 				FreeGameState = Handle.Common.Protos.FreeGameState.None,

@@ -35,7 +35,7 @@ internal class JobExecuteCommandService : ICommandService<JobExecuteCommand>
 		var endTime = DateTimeOffset.ParseExact(DateTimeOffset.UtcNow.ToString(@"yyyy-MM-dd\THH:mm:00K"), @"yyyy-MM-dd\THH:mm:ssK", null, styles: System.Globalization.DateTimeStyles.RoundtripKind);
 		var startTime = endTime.AddMinutes(_intervalMinutes * -1);
 
-		var parameters = new GlobalTechnologyGameRecordMessage
+		var message = new GlobalTechnologyGameRecordMessage
 		{
 			GameProviderCode = command.GameProviderCode,
 			DataApiUrl = command.DataApiUrl,
@@ -45,12 +45,27 @@ internal class JobExecuteCommandService : ICommandService<JobExecuteCommand>
 			EndTime = endTime
 		};
 
-		_logger.LogInformation("LogOn:{logOn} Parameters:{parameters}", DateTime.Now.ToString("u"), parameters);
+		_logger.LogInformation("{logInformation}",
+			JsonSerializer.Serialize(new
+			{
+				LogOn = DateTime.Now.ToString("u"),
+				Subject = GlobalTechnologyNatsConst.SchedulePublish,
+				Data = new
+				{
+					message.GameProviderCode,
+					message.DataApiUrl,
+					message.BrandId,
+					message.SecretKey,
+					StartTime = message.StartTime.ToString("u"),
+					EndTime = message.EndTime.ToString("u"),
+				},
+				Message = "This publish message."
+			}));
 
 		return _messageSender
 			.PublishAsync(
 			subject: GlobalTechnologyNatsConst.SchedulePublish,
-			data: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(parameters)),
+			data: JsonSerializer.SerializeToUtf8Bytes(message),
 			cancellationToken: cancellationToken);
 	}
 }
