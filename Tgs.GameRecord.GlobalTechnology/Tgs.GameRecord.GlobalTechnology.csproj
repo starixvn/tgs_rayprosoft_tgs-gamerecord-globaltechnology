@@ -7,11 +7,6 @@
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 	</PropertyGroup>
 
-	<PropertyGroup>
-		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-		<NoWarn>$(NoWarn);1591;0063</NoWarn>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<PackageReference Include="FluentdForward.OpenTelemetry.MessagePack" Version="0.3.8" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
@@ -24,7 +19,7 @@
 		<PackageReference Include="OpenTelemetry.Instrumentation.GrpcNetClient" Version="1.0.0-rc9.3" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.1" />
 		<PackageReference Include="Tgs.Interceptors" Version="0.2.1" />
 	</ItemGroup>
 

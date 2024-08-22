@@ -2,35 +2,36 @@
 using System.Net.Sockets;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Tgs.GameRecord.GlobalTechnology.Core;
 
 namespace Tgs.GameRecord.GlobalTechnology.Controllers;
 
 [Route("[controller]")]
 [ApiController]
-public class InfoController(IConfiguration configuration) : ControllerBase
+public class InfoController : ControllerBase
 {
-	private readonly IConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
 	[HttpGet]
-	public async Task<object> GetAsync([FromServices] IWebHostEnvironment _hostingEnvironment)
+	public async Task<object> GetAsync(
+		[FromServices] IWebHostEnvironment hostingEnvironment,
+		[FromServices] IOptions<GameRecordInfoOptions> gameRecordInfoOptions,
+		[FromServices] IOptions<PolicySettingsOptions> policySettingsOptions)
 	{
 		var hostName = Dns.GetHostName();
 		var hostEntry = await Dns.GetHostEntryAsync(hostName).ConfigureAwait(false);
-		var hostIp = Array.Find(hostEntry.AddressList,
-			x => x.AddressFamily == AddressFamily.InterNetwork);
-		var gameRecordInfo = _configuration.GetSection("GameRecordInfo").Get<GameRecordInfoOptions>();
+		var hostIp = Array.Find(hostEntry.AddressList, x => x.AddressFamily == AddressFamily.InterNetwork);
 
 		return new
 		{
 			Environment.MachineName,
 			HostName = hostName,
 			HostIp = hostIp?.ToString() ?? string.Empty,
-			Environment = _hostingEnvironment.EnvironmentName,
+			Environment = hostingEnvironment.EnvironmentName,
 			OsVersion = $"{Environment.OSVersion}",
 			Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
 			ProcessCount = Environment.ProcessorCount,
-			gameRecordInfo,
+			GameRecordInfoOptions = gameRecordInfoOptions.Value,
+			PolicySettingsOptions = policySettingsOptions.Value
 		};
 	}
 }

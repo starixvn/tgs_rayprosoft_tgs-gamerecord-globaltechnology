@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hangfire;
 using Hangfire.Storage;
@@ -13,7 +14,7 @@ namespace Tgs.GameRecord.GlobalTechnology.Core.JobApplicationServices;
 internal class JobInitCommandService(
 	ILogger<JobInitCommandService> logger,
 	IOptions<GameRecordInfoOptions> options,
-	IHangfireLock hangfireLock,
+	IHangfireLockRepository hangfireLock,
 	IGameCommandClient client) : ICommandService<JobInitCommand>
 {
 	private readonly GameRecordInfoOptions _gameRecordInfo = options.Value;
@@ -32,7 +33,12 @@ internal class JobInitCommandService(
 				cancellationToken: cancellationToken)
 				.ConfigureAwait(false))
 			{
-				logger.LogWarning("LogOn:{logOn} Message:進行初始化動作，已經有其他服務進行", DateTime.Now.ToString("o"));
+				logger.LogWarning("{logWarning}",
+					JsonSerializer.Serialize(new
+					{
+						LogOn = DateTime.Now.ToString("u"),
+						Message = "進行初始化動作，已經有其他服務進行。"
+					}));
 				return;
 			}
 
@@ -48,14 +54,19 @@ internal class JobInitCommandService(
 			{
 				var gameProviderConfiguration = $"{gameProviderCode}Configuration";
 				var settingConfiguration = await client
-				.SettingGetConfigurationStringAsync(
-				key: gameProviderConfiguration,
-				cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+					.SettingGetConfigurationStringAsync(
+						key: gameProviderConfiguration,
+						cancellationToken: cancellationToken)
+					.ConfigureAwait(false);
 
 				if (string.IsNullOrEmpty(settingConfiguration))
 				{
-					logger.LogError("LogOn:{logOn} Message:遊戲供應商({gameProviderCode})設定檔不存在({gameProviderConfiguration})。", DateTime.Now.ToString("o"), gameProviderCode, gameProviderConfiguration);
+					logger.LogError("{logError}",
+						JsonSerializer.Serialize(new
+						{
+							LogOn = DateTime.Now.ToString("u"),
+							Message = $"遊戲供應商({gameProviderCode})設定檔不存在({gameProviderConfiguration})"
+						}));
 					continue;
 				}
 
@@ -64,8 +75,8 @@ internal class JobInitCommandService(
 
 				var gameProviderConfigs = await client
 					.GameProviderConfigurationQueryAsync(
-					gameProviderCode: gameProviderCode,
-					cancellationToken: cancellationToken)
+						gameProviderCode: gameProviderCode,
+						cancellationToken: cancellationToken)
 					.ToArrayAsync(cancellationToken: cancellationToken)
 					.ConfigureAwait(false)
 					?? Enumerable.Empty<GameProviderConfigInfo>();
@@ -112,14 +123,14 @@ internal class JobInitCommandService(
 
 					var recurringJobId = $"{gameProviderConfig.Name}|{brandId}|{gameProviderConfig.GameProviderConfigId}";
 
-					RecurringJob.AddOrUpdate<IHangfireUtensil>(
+					RecurringJob.AddOrUpdate<IHangfireUtensilRepository>(
 						recurringJobId: recurringJobId,
 						methodCall: service => service.JobExecuteAsync(jobExecuteCommand),
 						cronExpression: Cron.Minutely(),
 						options: _recurringJobOptions);
 
 					//初始化強制第一次處理
-					_ = BackgroundJob.Enqueue<IHangfireUtensil>(service => service.JobExecuteAsync(jobExecuteCommand));
+					_ = BackgroundJob.Enqueue<IHangfireUtensilRepository>(service => service.JobExecuteAsync(jobExecuteCommand));
 				}
 			}
 		}
@@ -129,7 +140,7 @@ internal class JobInitCommandService(
 		}
 		finally
 		{
-			_ = BackgroundJob.Schedule<IHangfireUtensil>(service => service.JobCheckAsync(), TimeSpan.FromMinutes(1));
+			_ = BackgroundJob.Schedule<IHangfireUtensilRepository>(service => service.JobCheckAsync(), TimeSpan.FromMinutes(1));
 		}
 	}
 }
