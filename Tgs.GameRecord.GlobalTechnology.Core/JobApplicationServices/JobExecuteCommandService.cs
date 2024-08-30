@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,31 +9,22 @@ using Valhalla.MessageQueue;
 
 namespace Tgs.GameRecord.GlobalTechnology.Core.JobApplicationServices;
 
-internal class JobExecuteCommandService : ICommandService<JobExecuteCommand>
-{
-	private readonly GameRecordInfoOptions _gameRecordInfo;
-	private readonly double _intervalMinutes;
-	private readonly ILogger<JobExecuteCommandService> _logger;
-	private readonly IMessageSender _messageSender;
-
-	public JobExecuteCommandService(
-		ILogger<JobExecuteCommandService> logger,
+internal class JobExecuteCommandService(
+	ILogger<JobExecuteCommandService> logger,
 		IOptions<GameRecordInfoOptions> options,
-		IMessageSender messageSender)
-	{
-		_gameRecordInfo = options.Value;
-		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-		_messageSender = messageSender ?? throw new ArgumentNullException(nameof(messageSender));
-		_intervalMinutes = _gameRecordInfo.IntervalMinutesMax < _gameRecordInfo.IntervalMinutes
-			? _gameRecordInfo.IntervalMinutesMax
-			: _gameRecordInfo.IntervalMinutesMinimum > _gameRecordInfo.IntervalMinutes
-			? _gameRecordInfo.IntervalMinutesMinimum
-			: _gameRecordInfo.IntervalMinutes;
-	}
+		TimeProvider timeProvider,
+		IMessageSender messageSender) : ICommandService<JobExecuteCommand>
+{
+	private readonly double _intervalMinutes = options.Value.IntervalMinutesMax < options.Value.IntervalMinutes
+		? options.Value.IntervalMinutesMax
+		: options.Value.IntervalMinutesMinimum > options.Value.IntervalMinutes
+		? options.Value.IntervalMinutesMinimum
+		: options.Value.IntervalMinutes;
 
 	public ValueTask ExecuteAsync(JobExecuteCommand command, CancellationToken cancellationToken = default)
 	{
-		var endTime = DateTimeOffset.ParseExact(DateTimeOffset.UtcNow.ToString(@"yyyy-MM-dd\THH:mm:00K"), @"yyyy-MM-dd\THH:mm:ssK", null, styles: System.Globalization.DateTimeStyles.RoundtripKind);
+		var currentTime = timeProvider.GetUtcNow();
+		var endTime = DateTimeOffset.ParseExact(currentTime.ToString(@"yyyy-MM-dd\THH:mm:00K"), @"yyyy-MM-dd\THH:mm:ssK", null, styles: System.Globalization.DateTimeStyles.RoundtripKind);
 		var startTime = endTime.AddMinutes(_intervalMinutes * -1);
 
 		var message = new GlobalTechnologyGameRecordMessage
@@ -45,7 +37,7 @@ internal class JobExecuteCommandService : ICommandService<JobExecuteCommand>
 			EndTime = endTime
 		};
 
-		_logger.LogInformation("{logInformation}",
+		logger.LogInformation("{logInformation}",
 			JsonSerializer.Serialize(new
 			{
 				LogOn = DateTime.Now.ToString("u"),
@@ -62,8 +54,7 @@ internal class JobExecuteCommandService : ICommandService<JobExecuteCommand>
 				Message = "This publish message."
 			}));
 
-		return _messageSender
-			.PublishAsync(
+		return messageSender.PublishAsync(
 			subject: GlobalTechnologyNatsConst.SchedulePublish,
 			data: JsonSerializer.SerializeToUtf8Bytes(message),
 			cancellationToken: cancellationToken);

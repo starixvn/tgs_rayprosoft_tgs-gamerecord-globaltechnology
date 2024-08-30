@@ -1,4 +1,4 @@
-namespace Tgs.GameRecord.GlobalTechnology.Core;
+﻿namespace Tgs.GameRecord.GlobalTechnology.Core;
 
 public record PolicySettingsOptions
 {
