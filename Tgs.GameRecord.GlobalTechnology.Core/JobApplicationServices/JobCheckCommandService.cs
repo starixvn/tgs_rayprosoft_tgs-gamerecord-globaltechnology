@@ -19,7 +19,7 @@ internal class JobCheckCommandService(
 				JsonSerializer.Serialize(new
 				{
 					LogOn = DateTime.Now.ToString("u"),
-					Message = "檢查遊戲廠商排程未啟動，進行重置。"
+					Message = "This game provider configuration schedule has not been started, initializing is required."
 				}));
 			return service.ExecuteAsync(
 				command: new(),
@@ -30,9 +30,8 @@ internal class JobCheckCommandService(
 			JsonSerializer.Serialize(new
 			{
 				LogOn = DateTime.Now.ToString("u"),
-				Message = $"檢查遊戲廠商排程有啟動，數量({connection.GetRecurringJobs().Count})。"
+				Message = $"This game provider configuration schedule has been started ({connection.GetRecurringJobs().Count})."
 			}));
-
 		return ValueTask.CompletedTask;
 	}
 }

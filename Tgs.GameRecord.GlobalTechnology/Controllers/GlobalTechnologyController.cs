@@ -7,7 +7,6 @@ namespace Tgs.GameRecord.GlobalTechnology.Controllers;
 
 [Route("api/gt")]
 [ApiController]
-
 public class GlobalTechnologyController : ControllerBase
 {
 	/// <summary>
